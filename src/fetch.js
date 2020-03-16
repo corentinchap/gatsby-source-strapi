@@ -8,9 +8,17 @@ module.exports = async ({
   jwtToken,
   queryLimit,
   reporter,
+  isSingleType
 }) => {
   // Define API endpoint.
-  const apiBase = `${apiURL}/${pluralize(contentType)}`
+  let apiBase = ``
+
+  if(isSingleType){
+    apiBase = `${apiURL}/${contentType}`
+  }
+  else{
+    apiBase = `${apiURL}/${pluralize(contentType)}`
+  }
   const apiEndpoint = `${apiBase}?_limit=${queryLimit}`
 
   reporter.info(`Starting to fetch data from Strapi - ${apiBase}`)
@@ -23,11 +31,15 @@ module.exports = async ({
     }
   }
 
-  // Make API request.
+ // Make API request.
   const documents = await axios(apiEndpoint, fetchRequestConfig)
 
-  // Map and clean data.
-  return documents.data.map(item => clean(item))
+   // Make sure response is an array for single type instances
+   const response = documents.data.length ? documents.data : [ documents.data ]
+
+   // Map and clean data.
+   let test = response.map(item => clean(item))
+   return test
 }
 
 /**
@@ -37,7 +49,7 @@ module.exports = async ({
  * @returns {object} output - Object cleaned
  */
 const clean = item => {
-  forEach(item, (value, key) => {
+   forEach(item, (value, key) => {
     if (startsWith(key, `__`)) {
       delete item[key]
     } else if (startsWith(key, `_`)) {
